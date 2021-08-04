@@ -1,0 +1,14 @@
+salesforce:
+  username: ""
+  password: ""
+  securitytoken: ""
+  url: "" 
+  consumerKey: ""
+  consumerSecret: ""
+  
+MySQL:
+  host: ""
+  username: ""
+  password: ""
+  port: ""
+  database: ""

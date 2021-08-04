@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="f36b4217-0258-4879-a879-743787ded655" >
+		<salesforce:cached-basic-connection username="${salesforce.username}" password="${salesforce.password}" securityToken="${salesforce.securitytoken}" url="${salesforce.url}" />
+	</salesforce:sfdc-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="69ccd966-a242-472d-83f8-0159601a802e" file="config.yaml" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="83ffa5d3-7537-4e68-a95d-f5f92c0a72ba" >
+		<db:my-sql-connection host="${MySQL.host}" port="${MySQL.port}" user="${MySQL.username}" password="${MySQL.password}" database="${MySQL.database}" />
+	</db:config>
+	<flow name="sf-to-mysqlFlow" doc:id="b9178e5a-a7ac-454f-b88d-25af69760f55" >
+		<scheduler doc:name="Scheduler" doc:id="afae025b-4802-4ff8-8321-de27e19de368" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<salesforce:query doc:name="Query" doc:id="7b16ed17-eef4-405a-9674-59ebc1a8302e" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query >Select Id,Name from Account limit 10</salesforce:salesforce-query>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="f45e4d64-2ec0-4858-acec-5de539ec8714" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="08e58bc9-b366-4efb-ad60-9537458b0986" >
+			<logger level="INFO" doc:name="Logger" doc:id="efba10d0-40a7-4d15-9a74-b2f6b075c1a4" message="#[payload]"/>
+			<db:insert doc:name="Insert" doc:id="e07e515c-cb94-4711-be4e-344b8c908d20" config-ref="Database_Config">
+				<db:sql >INSERT INTO contact (`Name`) values(:name)</db:sql>
+				<db:input-parameters ><![CDATA[#['name':payload.Name]]]></db:input-parameters>
+			</db:insert>
+		</foreach>
+	</flow>
+</mule>
